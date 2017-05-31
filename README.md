@@ -3,8 +3,8 @@ README
 该文件用来展示天工收银子账号相关操作和手动分账相关操作
 
 ****
-###　　　　　　　　　　　　Author:Roshan
-###　　　　　　　　　 E-mail:275509523@qq.com
+### Author:Roshan  
+### E-mail:275509523@qq.com
 
 ===========================
 
@@ -26,6 +26,7 @@ README
     * [获取体现请求申请](#获取体现请求申请) withdrawal_list.php
     * [手动分账相关操作](#手动分账相关操作)
     * [手动分账](#手动分账) clearing_fzbprofit.php
+    * [分账规则](#分账规则)
 
 时序图
 ------------
@@ -509,3 +510,66 @@ string(20) "{
 }"
 */
 ```
+
+分账规则
+----------
+1. 分账数据中的 amount 总和  必须等于  订单的金额
+2. 分账数据中的 fee 总和 不小于 订单应付的手续费
+3. 每一组分账数据中 fee 不得大于 amount
+
+规则说明：  
+分账数据中必填参数有 `account_id`:账号 `amount`:分账金额 `fee`:手续费  
+`account_id` 为`main`时  为主账号  
+账号实际收到的分账金额为 `amount` 减去 `fee` 的结果  
+ For example:
+一笔100 的订单。客户支付成功，主账号main收到 100元，main的费率为 1% 。main下有两个子账号 分别为A和B，main要分给 A 30元 收10元手续费 B 20 元 无手续费 我们的分账数据如下  
+```
+array(
+    0 =>
+    array (
+        'account_id' => 'main',
+        'amount' => 50,     // amount
+        'fee' => 0,         //大于  amount * 0.01   小于 amount 就好
+        'comment' => '',
+    ),
+    1 =>
+     array (
+         'account_id' => 'A',
+         'amount' => 30,
+         'fee' => 10,
+         'comment' => '',
+     ),
+    2 =>
+    array (
+        'account_id' => 'B',
+        'amount' => 20,
+        'fee' => '0',
+        'comment' => '',
+    ),
+);
+```
+结果是  main 收到 49元（支付了1元的天工收付费） A 收到了 20元 （30 - 10） B 收到了 20元
+
+
+For example:
+一笔100 的订单。客户支付成功，主账号main收到 100元，main的费率为 1% 。main下有两个子账号 分别为A和B，main全部要分给 A 。我们的分账数据如下  
+```
+array(
+    0 =>
+    array (
+        'account_id' => 'main',
+        'amount' => 1,     // amount
+        'fee' => 1,         //大于  amount * 0.01   小于 amount 就好
+        'comment' => '',
+    ),
+    1 =>
+     array (
+         'account_id' => 'A',
+         'amount' => 99,
+         'fee' => 0,
+         'comment' => '',
+     ),
+
+);
+```
+结果是  main 收到 0元（支付了1元的天工收付费） A 收到了 99元
